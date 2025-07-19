@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using RobTeach.Models;
@@ -212,6 +213,18 @@ namespace RobTeach.Services
                             // though they should always be present if saved correctly.
                             // One could attempt to use the 3 points here as a fallback, but it might lead to the same reconciliation issues.
                             System.Diagnostics.Debug.WriteLine($"[TrajectoryJsonConverter] Read: Could not reconstruct DxfCircle for trajectory {trajectory.OriginalEntityHandle} as OriginalCircleRadius is invalid or not set. OriginalDxfEntity will be null.");
+                        }
+                        break;
+                    case "Polygon":
+                        if (trajectory.Points.Count > 0)
+                        {
+                            var vertices = trajectory.Points.Select(p => new DxfLwPolylineVertex { X = p.X, Y = p.Y, Bulge = 0 }).ToList();
+                            var polyline = new DxfLwPolyline(vertices)
+                            {
+                                IsClosed = true, // Assuming closed polygons
+                                Elevation = trajectory.PolygonZ
+                            };
+                            trajectory.OriginalDxfEntity = polyline;
                         }
                         break;
                     case "LwPolyline": // Assuming LwPolyline data would be deserialized onto Trajectory if supported
